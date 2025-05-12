@@ -1,0 +1,26 @@
+name: PR Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  process-pull-request:
+    name: Process pull request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Labeler
+        uses: actions/labeler@v4
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+
+      # Automatically add type labels based on PR title
+      - name: Add Type Label
+        uses: TimonVS/pr-labeler-action@v4
+        with:
+          configuration-path: .github/pr-labeler.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
