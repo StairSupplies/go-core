@@ -19,7 +19,7 @@ func FormatFloatWithCommas(f float64) string {
 
 	reversed := ReverseString(parts[0])
 	reversedWithCommas := ""
-	
+
 	for i, c := range reversed {
 		if i > 0 && i%3 == 0 {
 			reversedWithCommas += ","
@@ -57,24 +57,6 @@ func TruncateString(s string, maxLen int) string {
 		return s[:maxLen]
 	}
 	return s[:maxLen-3] + "..."
-}
-
-// PadLeft pads a string on the left to reach a desired length
-func PadLeft(s string, padChar rune, length int) string {
-	if len(s) >= length {
-		return s
-	}
-	padding := strings.Repeat(string(padChar), length-len(s))
-	return padding + s
-}
-
-// PadRight pads a string on the right to reach a desired length
-func PadRight(s string, padChar rune, length int) string {
-	if len(s) >= length {
-		return s
-	}
-	padding := strings.Repeat(string(padChar), length-len(s))
-	return s + padding
 }
 
 // IsEmpty checks if a string is empty or contains only whitespace
