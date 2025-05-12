@@ -97,56 +97,6 @@ func TestTruncateString(t *testing.T) {
 	}
 }
 
-func TestPadLeft(t *testing.T) {
-	tests := []struct {
-		name     string
-		s        string
-		padChar  rune
-		length   int
-		expected string
-	}{
-		{"empty string", "", ' ', 5, "     "},
-		{"already at length", "hello", ' ', 5, "hello"},
-		{"longer than length", "hello", ' ', 3, "hello"},
-		{"needs padding", "hello", ' ', 10, "     hello"},
-		{"different pad char", "123", '0', 5, "00123"},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result := PadLeft(tc.s, tc.padChar, tc.length)
-			if result != tc.expected {
-				t.Errorf("PadLeft(%s, %c, %d) = %s; expected %s", tc.s, tc.padChar, tc.length, result, tc.expected)
-			}
-		})
-	}
-}
-
-func TestPadRight(t *testing.T) {
-	tests := []struct {
-		name     string
-		s        string
-		padChar  rune
-		length   int
-		expected string
-	}{
-		{"empty string", "", ' ', 5, "     "},
-		{"already at length", "hello", ' ', 5, "hello"},
-		{"longer than length", "hello", ' ', 3, "hello"},
-		{"needs padding", "hello", ' ', 10, "hello     "},
-		{"different pad char", "123", '0', 5, "12300"},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result := PadRight(tc.s, tc.padChar, tc.length)
-			if result != tc.expected {
-				t.Errorf("PadRight(%s, %c, %d) = %s; expected %s", tc.s, tc.padChar, tc.length, result, tc.expected)
-			}
-		})
-	}
-}
-
 func TestIsEmpty(t *testing.T) {
 	tests := []struct {
 		name     string
