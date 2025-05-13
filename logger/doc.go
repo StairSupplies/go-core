@@ -64,6 +64,34 @@ logger with string formatting (using the sugared logger):
 	// Info level with formatting
 	logger.Infof("Application started with version %s in %s environment", version, env)
 
+# Structured Logging
+
+Log with structured key-value pairs (using the sugared logger):
+
+	// Debug level with structured key-value pairs
+	logger.Debugw("Processing item", 
+		"item_id", item.ID, 
+		"status", item.Status,
+	)
+
+	// Info level with structured key-value pairs
+	logger.Infow("Application started", 
+		"version", version, 
+		"environment", env,
+	)
+
+	// Warning level with structured key-value pairs
+	logger.Warnw("API rate limit approaching", 
+		"current", current, 
+		"limit", limit,
+	)
+
+	// Error level with structured key-value pairs
+	logger.Errorw("Failed to process payment", 
+		"user_id", userID, 
+		"error", err.Error(),
+	)
+
 # Context-Aware Logging
 
 Use context to pass loggers:

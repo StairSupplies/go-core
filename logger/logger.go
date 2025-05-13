@@ -183,9 +183,19 @@ func Debugf(template string, args ...interface{}) {
 	GetSugared().Debugf(template, args...)
 }
 
+// Debugw logs at debug level with structured key-value pairs (sugared logger)
+func Debugw(msg string, keysAndValues ...interface{}) {
+	GetSugared().Debugw(msg, keysAndValues...)
+}
+
 // Infof logs at info level with formatting (sugared logger)
 func Infof(template string, args ...interface{}) {
 	GetSugared().Infof(template, args...)
+}
+
+// Infow logs at info level with structured key-value pairs (sugared logger)
+func Infow(msg string, keysAndValues ...interface{}) {
+	GetSugared().Infow(msg, keysAndValues...)
 }
 
 // Warnf logs at warn level with formatting (sugared logger)
@@ -193,14 +203,29 @@ func Warnf(template string, args ...interface{}) {
 	GetSugared().Warnf(template, args...)
 }
 
+// Warnw logs at warn level with structured key-value pairs (sugared logger)
+func Warnw(msg string, keysAndValues ...interface{}) {
+	GetSugared().Warnw(msg, keysAndValues...)
+}
+
 // Errorf logs at error level with formatting (sugared logger)
 func Errorf(template string, args ...interface{}) {
 	GetSugared().Errorf(template, args...)
 }
 
+// Errorw logs at error level with structured key-value pairs (sugared logger)
+func Errorw(msg string, keysAndValues ...interface{}) {
+	GetSugared().Errorw(msg, keysAndValues...)
+}
+
 // Fatalf logs at fatal level with formatting and then calls os.Exit(1)
 func Fatalf(template string, args ...interface{}) {
 	GetSugared().Fatalf(template, args...)
+}
+
+// Fatalw logs at fatal level with structured key-value pairs (sugared logger) and then calls os.Exit(1)
+func Fatalw(msg string, keysAndValues ...interface{}) {
+	GetSugared().Fatalw(msg, keysAndValues...)
 }
 
 // Sync flushes any buffered log entries
