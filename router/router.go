@@ -157,19 +157,50 @@ func (r *Router) Mount(pattern string, h http.Handler) {
 	r.Router.Mount(pattern, h)
 }
 
-// WithMiddleware creates a copy of the router with additional middleware.
-// This allows you to add custom middleware to a router.
+// WithMiddleware creates a router with custom middleware.
+// All middlewares must be defined before routes, following chi router's design.
+// This method should be called right after creating a new router, before adding any routes.
 func (r *Router) WithMiddleware(middlewares ...func(http.Handler) http.Handler) *Router {
-	newRouter := &Router{
-		Router:  r.Router,
-		options: r.options,
+	// Get a copy of the original options
+	opts := r.options
+	
+	// Create a new router instance
+	router := chi.NewRouter()
+	
+	// Apply built-in middleware based on options first
+	if opts.EnableRequestID {
+		router.Use(middleware.RequestID)
 	}
-
+	
+	if opts.EnableRecovery {
+		router.Use(middleware.Recoverer)
+	}
+	
+	if opts.EnableLogging {
+		router.Use(Logger(opts.LoggerOptions))
+	}
+	
+	if opts.EnableTimeout {
+		router.Use(middleware.Timeout(opts.TimeoutDuration))
+	}
+	
+	// Apply additional custom middleware
 	for _, m := range middlewares {
-		newRouter.Use(m)
+		router.Use(m)
 	}
-
-	return newRouter
+	
+	// Add healthcheck route if enabled
+	if opts.EnableHealthcheck {
+		router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
+	}
+	
+	return &Router{
+		Router:  router,
+		options: opts,
+	}
 }
 
 // ServeHTTP implements the http.Handler interface.
