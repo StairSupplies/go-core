@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/StairSupplies/go-core/compare/v1.2.0...v1.3.0) (2025-05-13)
+
+
+### Features
+
+* **router:** add optional healthcheck ([5af973f](https://github.com/StairSupplies/go-core/commit/5af973faed62ca5a161bb9dc6e0855aeb516a6e3))
+
+
+### Performance Improvements
+
+* **router:** remove custom recoverer middleware ([0cb2d67](https://github.com/StairSupplies/go-core/commit/0cb2d670bcd7292c9975cb4098529ef2a22de58c))
+
 # [1.2.0](https://github.com/StairSupplies/go-core/compare/v1.1.0...v1.2.0) (2025-05-13)
 
 
