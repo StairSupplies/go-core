@@ -2,9 +2,6 @@ package logger
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"os"
 	"testing"
 
 	"go.uber.org/zap"
@@ -66,99 +63,6 @@ func TestInit(t *testing.T) {
 		// Clean up
 		_ = Sync()
 	})
-}
-
-// Helper function to capture logs during tests
-func captureOutput(f func()) ([]map[string]interface{}, error) {
-	// Create a pipe
-	r, w, err := os.Pipe()
-	if err != nil {
-		return nil, err
-	}
-
-	// Save original outputs
-	originalStdout := os.Stdout
-	originalStderr := os.Stderr
-
-	// Set output to pipe
-	os.Stdout = w
-	os.Stderr = w
-
-	// Create logger with stdout output
-	cfg := Config{
-		Level:       "debug",
-		Development: false,
-		OutputPaths: []string{"stdout"},
-	}
-
-	err = Init(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// Execute the function that logs
-	f()
-
-	// Sync to flush logs
-	_ = Sync()
-
-	// Restore original outputs
-	os.Stdout = originalStdout
-	os.Stderr = originalStderr
-
-	// Close the write end of the pipe
-	err = w.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	// Read all logs from the pipe
-	output, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Split logs by newline
-	lines := splitLines(string(output))
-
-	// Parse JSON logs
-	logs := make([]map[string]interface{}, 0, len(lines))
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-
-		var log map[string]interface{}
-		err = json.Unmarshal([]byte(line), &log)
-		if err != nil {
-			return nil, err
-		}
-
-		logs = append(logs, log)
-	}
-
-	return logs, nil
-}
-
-// Helper function to split output by lines
-func splitLines(s string) []string {
-	var lines []string
-	var line string
-
-	for _, char := range s {
-		if char == '\n' {
-			lines = append(lines, line)
-			line = ""
-		} else {
-			line += string(char)
-		}
-	}
-
-	if line != "" {
-		lines = append(lines, line)
-	}
-
-	return lines
 }
 
 func TestLoggerMethods(t *testing.T) {
