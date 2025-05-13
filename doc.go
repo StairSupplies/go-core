@@ -4,12 +4,19 @@ Go-Core is a shared utility library for common Go functions and patterns.
 This library provides reusable, non-business-specific utility functions across
 multiple domains, organized into several packages:
 
-# HTTP Package
+# API Package
 
-Package http provides utilities for handling HTTP responses, API error handling, and
+Package api provides utilities for handling HTTP responses, API error handling, and
 middleware patterns.
 
-	import "github.com/StairSupplies/go-core/http"
+	import "github.com/StairSupplies/go-core/api"
+
+# Router Package
+
+Package router provides an opinionated chi-based HTTP router with built-in middleware
+for logging, error handling, and request tracing.
+
+	import "github.com/StairSupplies/go-core/router"
 
 # REST Package
 
@@ -25,12 +32,12 @@ better error handling.
 
 	import "github.com/StairSupplies/go-core/jsonutils"
 
-# Log Package
+# Logger Package
 
-Package log provides structured logging using Uber's Zap with context-aware logging
+Package logger provides structured logging using Uber's Zap with context-aware logging
 and both structured and formatted logging options.
 
-	import "github.com/StairSupplies/go-core/log"
+	import "github.com/StairSupplies/go-core/logger"
 
 # Config Package
 
@@ -38,25 +45,6 @@ Package config provides utilities for loading application configuration from env
 variables with type-safe retrieval using generics.
 
 	import "github.com/StairSupplies/go-core/config"
-
-# Validate Package
-
-Package validate provides input validation utilities with a fluent validation API.
-
-	import "github.com/StairSupplies/go-core/validate"
-
-# String Package
-
-Package str provides string formatting and manipulation utilities.
-
-	import "github.com/StairSupplies/go-core/str"
-
-# TimeUtil Package
-
-Package timeutil provides date and time utility functions, format constants, and
-calculations.
-
-	import "github.com/StairSupplies/go-core/timeutil"
 
 See the individual package documentation for more details and examples.
 */

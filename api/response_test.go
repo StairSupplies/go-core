@@ -1,4 +1,4 @@
-package httputils
+package api
 
 import (
 	"encoding/json"
@@ -9,9 +9,9 @@ import (
 	"testing"
 )
 
-func TestAPIError_Error(t *testing.T) {
+func TestError_Error(t *testing.T) {
 	// Create API error
-	apiErr := APIError{
+	apiErr := Error{
 		StatusCode: http.StatusBadRequest,
 		Message:    "invalid request",
 	}
@@ -19,16 +19,16 @@ func TestAPIError_Error(t *testing.T) {
 	// Test Error() method
 	expected := "API Error 400: invalid request"
 	if got := apiErr.Error(); got != expected {
-		t.Errorf("APIError.Error() = %v, want %v", got, expected)
+		t.Errorf("Error.Error() = %v, want %v", got, expected)
 	}
 }
 
-func TestNewAPIError(t *testing.T) {
+func TestNewError(t *testing.T) {
 	// Create error
 	err := errors.New("test error")
 
 	// Create API error
-	apiErr := NewAPIError(http.StatusBadRequest, err)
+	apiErr := NewError(http.StatusBadRequest, err)
 
 	// Validate result
 	if apiErr.StatusCode != http.StatusBadRequest {
@@ -44,7 +44,7 @@ func TestErrorFactories(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		factory  func(error) APIError
+		factory  func(error) Error
 		expected int
 	}{
 		{"ServerError", ServerError, http.StatusInternalServerError},
@@ -199,10 +199,10 @@ func TestWriteError(t *testing.T) {
 		}
 	})
 
-	// Test with APIError
-	t.Run("APIError", func(t *testing.T) {
+	// Test with API Error
+	t.Run("API Error", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		err := APIError{
+		err := Error{
 			StatusCode: http.StatusBadRequest,
 			Message:    "invalid request",
 		}
