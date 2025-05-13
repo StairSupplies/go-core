@@ -3,6 +3,7 @@ module github.com/StairSupplies/go-core
 go 1.21.0
 
 require (
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/viper v1.20.1
 	go.uber.org/zap v1.26.0
