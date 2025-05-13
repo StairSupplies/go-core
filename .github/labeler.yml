@@ -1,10 +1,10 @@
+# Add 'api' label to any changes in the api package
+api:
+  - api/**/*
+
 # Add 'config' label to any changes in the config package
 config:
   - config/**/*
-
-# Add 'httputils' label to any changes in the httputils package  
-httputils:
-  - httputils/**/*
 
 # Add 'jsonutils' label to any changes in the jsonutils package
 jsonutils:
@@ -18,21 +18,13 @@ logger:
 rest:
   - rest/**/*
 
-# Add 'str' label to any changes in the str package
-str:
-  - str/**/*
-
-# Add 'timeutils' label to any changes in the timeutils package
-timeutils:
-  - timeutils/**/*
-
-# Add 'validate' label to any changes in the validate package
-validate:
-  - validate/**/*
+# Add 'router' label to any changes in the router package
+router:
+  - router/**/*
 
 # Add 'test' label to any changes to test files
 test:
-  - '**/*_test.go'
+  - "**/*_test.go"
 
 # Add 'workflow' label to any changes in GitHub Actions
 workflow:
