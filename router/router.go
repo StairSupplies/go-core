@@ -51,11 +51,11 @@ type LoggerOptions struct {
 // These defaults provide a balance of functionality and performance.
 func DefaultOptions() Options {
 	return Options{
-		EnableLogging:    true,
-		EnableRecovery:   true,
-		EnableRequestID:  true,
-		EnableTimeout:    true,
-		TimeoutDuration:  60 * time.Second,
+		EnableLogging:   true,
+		EnableRecovery:  true,
+		EnableRequestID: true,
+		EnableTimeout:   true,
+		TimeoutDuration: 60 * time.Second,
 		LoggerOptions: LoggerOptions{
 			LogRequestHeaders:  false,
 			LogResponseHeaders: false,
@@ -75,26 +75,26 @@ func New() *Router {
 // Use this when you need to customize the router's behavior.
 func NewWithOptions(options Options) *Router {
 	r := chi.NewRouter()
-	
+
 	// Apply middleware based on options
 	if options.EnableRequestID {
 		r.Use(middleware.RequestID)
 	}
-	
+
 	if options.EnableRecovery {
-		r.Use(Recoverer())
+		r.Use(middleware.Recoverer)
 	}
-	
+
 	if options.EnableLogging {
 		r.Use(Logger(options.LoggerOptions))
 	}
-	
+
 	if options.EnableTimeout {
 		r.Use(middleware.Timeout(options.TimeoutDuration))
 	}
-	
+
 	return &Router{
-		Router: r,
+		Router:  r,
 		options: options,
 	}
 }
@@ -112,24 +112,24 @@ func (r *Router) Group(fn func(r chi.Router)) chi.Router {
 		Router:  chi.NewRouter(),
 		options: r.options,
 	}
-	
+
 	// Apply middleware to subRouter if needed
 	if r.options.EnableRequestID {
 		subRouter.Use(middleware.RequestID)
 	}
-	
+
 	if r.options.EnableRecovery {
-		subRouter.Use(Recoverer())
+		subRouter.Use(middleware.Recoverer)
 	}
-	
+
 	if r.options.EnableLogging {
 		subRouter.Use(Logger(r.options.LoggerOptions))
 	}
-	
+
 	if r.options.EnableTimeout {
 		subRouter.Use(middleware.Timeout(r.options.TimeoutDuration))
 	}
-	
+
 	fn(subRouter)
 	return subRouter
 }
@@ -147,11 +147,11 @@ func (r *Router) WithMiddleware(middlewares ...func(http.Handler) http.Handler) 
 		Router:  r.Router,
 		options: r.options,
 	}
-	
+
 	for _, m := range middlewares {
 		newRouter.Use(m)
 	}
-	
+
 	return newRouter
 }
 
