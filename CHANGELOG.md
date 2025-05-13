@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/StairSupplies/go-core/compare/v1.1.0...v1.2.0) (2025-05-13)
+
+
+### Features
+
+* add api and router package ([c29de8a](https://github.com/StairSupplies/go-core/commit/c29de8a28d0baa2bd67d557202a0e619f6b3218a))
+
 # [1.1.0](https://github.com/StairSupplies/go-core/compare/v1.0.0...v1.1.0) (2025-05-13)
 
 
