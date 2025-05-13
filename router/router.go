@@ -63,7 +63,7 @@ func DefaultOptions() Options {
 			LogRequestHeaders:  false,
 			LogResponseHeaders: false,
 			LogRequestBody:     false,
-			SkipPaths:          []string{"/health", "/metrics"},
+			SkipPaths:          []string{"/healthz", "/metrics"},
 		},
 	}
 }
@@ -97,7 +97,7 @@ func NewWithOptions(options Options) *Router {
 	}
 
 	if options.EnableHealthcheck {
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		})
@@ -141,7 +141,7 @@ func (r *Router) Group(fn func(r chi.Router)) chi.Router {
 	}
 
 	if r.options.EnableHealthcheck {
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		})
