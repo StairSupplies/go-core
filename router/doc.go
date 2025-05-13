@@ -10,7 +10,8 @@ a consistent approach to building HTTP services with sensible defaults.
   - Integration with the go-core/api package for error handling
   - Structured logging with the go-core/logger package
   - Request tracing with unique request IDs
-  - Panic recovery with proper error responses
+  - Standard panic recovery via Chi's Recoverer middleware
+  - Optional healthcheck endpoint at /healthz
   - Timeout handling
   - Configurable middleware options
 
@@ -18,11 +19,10 @@ a consistent approach to building HTTP services with sensible defaults.
 
 Creating a new router with default middleware:
 
-	// Create a new router with default middleware
+	// Create a new router with default middleware (includes /healthz endpoint)
 	r := router.New()
 
-	// Add routes
-	r.Get("/api/health", healthCheckHandler)
+	// Add custom routes
 	r.Post("/api/users", createUserHandler)
 
 	// Start the server
@@ -70,15 +70,16 @@ You can create route groups with shared middleware:
 You can customize the router's middleware:
 
 	r := router.NewWithOptions(router.Options{
-	    EnableLogging:   true,
-	    EnableRecovery:  true,
-	    EnableRequestID: true,
-	    EnableTimeout:   true,
-	    TimeoutDuration: 30 * time.Second,
+	    EnableLogging:     true,
+	    EnableRecovery:    true,
+	    EnableRequestID:   true,
+	    EnableTimeout:     true,
+	    EnableHealthcheck: true,  // Adds a /healthz endpoint
+	    TimeoutDuration:   30 * time.Second,
 	    LoggerOptions: router.LoggerOptions{
 	        LogRequestHeaders:  true,
 	        LogResponseHeaders: false,
-	        SkipPaths:          []string{"/health", "/metrics"},
+	        SkipPaths:          []string{"/healthz", "/metrics"},
 	    },
 	})
 

@@ -120,8 +120,6 @@ func TestRouterGroup(t *testing.T) {
 }
 
 func TestWithMiddleware(t *testing.T) {
-	r := New()
-	
 	// Create a custom middleware
 	testMiddleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,10 +128,10 @@ func TestWithMiddleware(t *testing.T) {
 		})
 	}
 	
-	// Add the middleware
-	r = r.WithMiddleware(testMiddleware)
+	// Create router with middleware first
+	r := New().WithMiddleware(testMiddleware)
 	
-	// Add a test handler
+	// Then add a test handler
 	r.Get("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("test"))

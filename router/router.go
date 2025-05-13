@@ -28,6 +28,8 @@ type Options struct {
 	EnableRequestID bool
 	// EnableTimeout enables timeout middleware
 	EnableTimeout bool
+	// EnableHealthcheck enables the healthcheck middleware
+	EnableHealthcheck bool
 	// TimeoutDuration sets the timeout for requests
 	TimeoutDuration time.Duration
 	// LoggerOptions configures the logger middleware
@@ -51,16 +53,17 @@ type LoggerOptions struct {
 // These defaults provide a balance of functionality and performance.
 func DefaultOptions() Options {
 	return Options{
-		EnableLogging:    true,
-		EnableRecovery:   true,
-		EnableRequestID:  true,
-		EnableTimeout:    true,
-		TimeoutDuration:  60 * time.Second,
+		EnableLogging:     true,
+		EnableRecovery:    true,
+		EnableRequestID:   true,
+		EnableTimeout:     true,
+		EnableHealthcheck: true,
+		TimeoutDuration:   60 * time.Second,
 		LoggerOptions: LoggerOptions{
 			LogRequestHeaders:  false,
 			LogResponseHeaders: false,
 			LogRequestBody:     false,
-			SkipPaths:          []string{"/health", "/metrics"},
+			SkipPaths:          []string{"/healthz", "/metrics"},
 		},
 	}
 }
@@ -75,26 +78,33 @@ func New() *Router {
 // Use this when you need to customize the router's behavior.
 func NewWithOptions(options Options) *Router {
 	r := chi.NewRouter()
-	
+
 	// Apply middleware based on options
 	if options.EnableRequestID {
 		r.Use(middleware.RequestID)
 	}
-	
+
 	if options.EnableRecovery {
-		r.Use(Recoverer())
+		r.Use(middleware.Recoverer)
 	}
-	
+
 	if options.EnableLogging {
 		r.Use(Logger(options.LoggerOptions))
 	}
-	
+
 	if options.EnableTimeout {
 		r.Use(middleware.Timeout(options.TimeoutDuration))
 	}
-	
+
+	if options.EnableHealthcheck {
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
+	}
+
 	return &Router{
-		Router: r,
+		Router:  r,
 		options: options,
 	}
 }
@@ -112,24 +122,31 @@ func (r *Router) Group(fn func(r chi.Router)) chi.Router {
 		Router:  chi.NewRouter(),
 		options: r.options,
 	}
-	
+
 	// Apply middleware to subRouter if needed
 	if r.options.EnableRequestID {
 		subRouter.Use(middleware.RequestID)
 	}
-	
+
 	if r.options.EnableRecovery {
-		subRouter.Use(Recoverer())
+		subRouter.Use(middleware.Recoverer)
 	}
-	
+
 	if r.options.EnableLogging {
 		subRouter.Use(Logger(r.options.LoggerOptions))
 	}
-	
+
 	if r.options.EnableTimeout {
 		subRouter.Use(middleware.Timeout(r.options.TimeoutDuration))
 	}
-	
+
+	if r.options.EnableHealthcheck {
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
+	}
+
 	fn(subRouter)
 	return subRouter
 }
@@ -140,19 +157,50 @@ func (r *Router) Mount(pattern string, h http.Handler) {
 	r.Router.Mount(pattern, h)
 }
 
-// WithMiddleware creates a copy of the router with additional middleware.
-// This allows you to add custom middleware to a router.
+// WithMiddleware creates a router with custom middleware.
+// All middlewares must be defined before routes, following chi router's design.
+// This method should be called right after creating a new router, before adding any routes.
 func (r *Router) WithMiddleware(middlewares ...func(http.Handler) http.Handler) *Router {
-	newRouter := &Router{
-		Router:  r.Router,
-		options: r.options,
+	// Get a copy of the original options
+	opts := r.options
+	
+	// Create a new router instance
+	router := chi.NewRouter()
+	
+	// Apply built-in middleware based on options first
+	if opts.EnableRequestID {
+		router.Use(middleware.RequestID)
 	}
 	
+	if opts.EnableRecovery {
+		router.Use(middleware.Recoverer)
+	}
+	
+	if opts.EnableLogging {
+		router.Use(Logger(opts.LoggerOptions))
+	}
+	
+	if opts.EnableTimeout {
+		router.Use(middleware.Timeout(opts.TimeoutDuration))
+	}
+	
+	// Apply additional custom middleware
 	for _, m := range middlewares {
-		newRouter.Use(m)
+		router.Use(m)
 	}
 	
-	return newRouter
+	// Add healthcheck route if enabled
+	if opts.EnableHealthcheck {
+		router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
+	}
+	
+	return &Router{
+		Router:  router,
+		options: opts,
+	}
 }
 
 // ServeHTTP implements the http.Handler interface.
