@@ -28,6 +28,8 @@ type Options struct {
 	EnableRequestID bool
 	// EnableTimeout enables timeout middleware
 	EnableTimeout bool
+	// EnableHealthcheck enables the healthcheck middleware
+	EnableHealthcheck bool
 	// TimeoutDuration sets the timeout for requests
 	TimeoutDuration time.Duration
 	// LoggerOptions configures the logger middleware
@@ -51,16 +53,17 @@ type LoggerOptions struct {
 // These defaults provide a balance of functionality and performance.
 func DefaultOptions() Options {
 	return Options{
-		EnableLogging:   true,
-		EnableRecovery:  true,
-		EnableRequestID: true,
-		EnableTimeout:   true,
-		TimeoutDuration: 60 * time.Second,
+		EnableLogging:     true,
+		EnableRecovery:    true,
+		EnableRequestID:   true,
+		EnableTimeout:     true,
+		EnableHealthcheck: true,
+		TimeoutDuration:   60 * time.Second,
 		LoggerOptions: LoggerOptions{
 			LogRequestHeaders:  false,
 			LogResponseHeaders: false,
 			LogRequestBody:     false,
-			SkipPaths:          []string{"/health", "/metrics"},
+			SkipPaths:          []string{"/healthz", "/metrics"},
 		},
 	}
 }
@@ -91,6 +94,13 @@ func NewWithOptions(options Options) *Router {
 
 	if options.EnableTimeout {
 		r.Use(middleware.Timeout(options.TimeoutDuration))
+	}
+
+	if options.EnableHealthcheck {
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
 	}
 
 	return &Router{
@@ -128,6 +138,13 @@ func (r *Router) Group(fn func(r chi.Router)) chi.Router {
 
 	if r.options.EnableTimeout {
 		subRouter.Use(middleware.Timeout(r.options.TimeoutDuration))
+	}
+
+	if r.options.EnableHealthcheck {
+		r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
 	}
 
 	fn(subRouter)
