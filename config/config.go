@@ -13,16 +13,6 @@ import (
 // New creates a new configuration instance of type T by loading environment variables
 // and/or a .env file. The configuration struct should use mapstructure tags to define
 // which environment variables to bind to each field.
-//
-// Example:
-//
-//	type AppConfig struct {
-//	    Port        string `mapstructure:"PORT"`
-//	    DatabaseURL string `mapstructure:"DATABASE_URL"`
-//	    Debug       bool   `mapstructure:"DEBUG"`
-//	}
-//
-//	cfg, err := config.New[AppConfig](".env")
 func New[T any](path string) (*T, error) {
 	// Load .env file if available
 	err := godotenv.Load(path)
