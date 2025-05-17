@@ -29,8 +29,11 @@ func Logger(opts LoggerOptions) func(next http.Handler) http.Handler {
 			// Create a response writer wrapper to capture status code
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
+			// Create a logger
+			reqLogger, _ := logger.NewLogger(logger.Config{})
+			
 			// Prepare request logger with common fields
-			requestLog := logger.With(
+			requestLog := reqLogger.With(
 				zap.String("method", r.Method),
 				zap.String("path", r.URL.Path),
 				zap.String("request_id", middleware.GetReqID(r.Context())),
@@ -47,7 +50,7 @@ func Logger(opts LoggerOptions) func(next http.Handler) http.Handler {
 			}
 
 			// Add logger to request context
-			ctx := logger.ContextWithLogger(r.Context(), requestLog)
+			ctx := logger.NewContext(r.Context(), requestLog)
 			r = r.WithContext(ctx)
 
 			// Log request start
