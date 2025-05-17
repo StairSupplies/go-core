@@ -1,64 +1,109 @@
 /*
-Package rest provides a fluent REST client for making HTTP requests.
+Package rest provides a fluent REST client for making HTTP requests with error handling and retry capabilities.
 
-It offers a chainable API for constructing and sending HTTP requests,
-with built-in support for JSON serialization/deserialization.
+This package simplifies making HTTP API requests with features like automatic JSON
+serialization/deserialization, retries with exponential backoff, and standardized error handling.
+It's designed to make API integration more reliable and consistent.
 
-# Client Setup
+# Features
 
-Create a new client with default settings (30-second timeout):
+  - Fluent interface for HTTP methods (GET, POST, PUT, PATCH, DELETE)
+  - Automatic JSON request/response serialization
+  - Configurable with functional options pattern
+  - Automatic retry with exponential backoff
+  - Standardized error handling with typed errors
+  - Integration with the go-core/logger package
+  - Context support for cancellation and timeouts
 
-    client := rest.NewClient()
+# Basic Usage
 
-Configure the client with a fluent interface:
+Creating a client and making requests:
 
-    client := rest.NewClient().
-        WithBaseURL("https://api.example.com").
-        WithHeader("Authorization", "Bearer " + token).
-        WithTimeout(5 * time.Second)
+	// Create a new client with a base URL
+	client, err := rest.NewClient(
+		rest.WithBaseURL("https://api.example.com"),
+		rest.WithTimeout(10 * time.Second),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-# Making Requests
+	// Make a GET request
+	var user User
+	err = client.Get(ctx, "/users/123", &user)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-The client supports all common HTTP methods:
+	// Make a POST request
+	newUser := User{Name: "Jane Doe", Email: "jane@example.com"}
+	var createdUser User
+	err = client.Post(ctx, "/users", newUser, &createdUser)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    // GET request
-    var users []User
-    err := client.Get(context.Background(), "/users", &users)
-    
-    // POST request
-    newUser := User{Name: "John", Email: "john@example.com"}
-    var createdUser User
-    err := client.Post(context.Background(), "/users", newUser, &createdUser)
-    
-    // PUT request
-    updatedUser := User{ID: 1, Name: "John Updated"}
-    var result User
-    err := client.Put(context.Background(), "/users/1", updatedUser, &result)
-    
-    // PATCH request
-    patch := map[string]string{"name": "John Updated"}
-    var result User
-    err := client.Patch(context.Background(), "/users/1", patch, &result)
-    
-    // DELETE request
-    var result struct { Success bool `json:"success"` }
-    err := client.Delete(context.Background(), "/users/1", &result)
+# Client Configuration
 
-# Advanced Usage
+The client can be configured with various options:
 
-For more control, use the Request method directly:
+	client, err := rest.NewClient(
+		rest.WithBaseURL("https://api.example.com"),
+		rest.WithTimeout(10 * time.Second),
+		rest.WithHeader("X-API-Key", "your-api-key"),
+		rest.WithServiceName("user-service"),
+	)
 
-    var response struct {
-        ID   int    `json:"id"`
-        Name string `json:"name"`
-    }
-    
-    err := client.Request(
-        context.Background(),
-        http.MethodGet,
-        "/users/1",
-        nil,
-        &response,
-    )
+# Error Handling
+
+The package provides standardized error handling:
+
+	var user User
+	err := client.Get(ctx, "/users/123", &user)
+	if err != nil {
+		switch {
+		case errors.Is(err, rest.ErrNotFound):
+			fmt.Println("User not found")
+		case errors.Is(err, rest.ErrUnauthorized):
+			fmt.Println("Authentication required")
+		case errors.Is(err, rest.ErrServerError):
+			fmt.Println("Server error occurred")
+		default:
+			fmt.Printf("Unknown error: %v", err)
+		}
+	}
+
+# Advanced HTTP Client Configuration
+
+For more control, you can provide a custom HTTP client:
+
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:        100,
+			MaxIdleConnsPerHost: 10,
+			IdleConnTimeout:     90 * time.Second,
+		},
+	}
+
+	client, err := rest.NewClient(
+		rest.WithHTTPClient(httpClient),
+	)
+
+# Logging Integration
+
+The client integrates with the go-core/logger package:
+
+	logger, err := logger.New(
+		logger.WithLevel("debug"),
+		logger.WithServiceName("api-client"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client, err := rest.NewClient(
+		rest.WithLogger(logger),
+	)
 */
 package rest
