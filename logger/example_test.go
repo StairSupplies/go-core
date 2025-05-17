@@ -3,148 +3,203 @@ package logger_test
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/StairSupplies/go-core/logger"
 	"go.uber.org/zap"
 )
 
-// ExampleInit demonstrates initializing the logger
-func ExampleInit() {
-	// Initialize the logger with a specific configuration
-	cfg := logger.Config{
-		Level:       "info",
-		Development: true,
-		// Disable actual logging for example test
-		OutputPaths: []string{"/dev/null"},
-		ServiceName: "example-service",
-		InitialFields: map[string]interface{}{
-			"environment": "testing",
-		},
-	}
-
-	// Initialize the logger
-	err := logger.Init(cfg)
+func Example() {
+	// Create a simple logger with default settings
+	log, err := logger.New()
 	if err != nil {
-		fmt.Printf("Error initializing logger: %v\n", err)
+		fmt.Printf("Error creating logger: %v\n", err)
 		return
 	}
 
-	fmt.Println("Logger initialized successfully")
-	// Output: Logger initialized successfully
+	// Log at different levels
+	log.Info("This is an informational message")
+	log.Warn("This is a warning message")
+	log.Debug("This won't be visible at default 'info' level")
+	log.Error("This is an error message")
+
+	// No Output: Log output is not captured in examples
 }
 
-// ExampleInfo demonstrates basic logging at the Info level
-func ExampleInfo() {
-	// Initialize a simple logger with no output
-	_ = logger.Init(logger.Config{
-		Level:       "info",
-		Development: true,
-		OutputPaths: []string{"/dev/null"},
-	})
+func ExampleNew() {
+	// Create a logger with custom options
+	log, err := logger.New(
+		logger.WithLevel("debug"),
+		logger.WithDevelopmentMode(true),
+		logger.WithServiceName("example-service"),
+		logger.WithInitialFields(map[string]interface{}{
+			"environment": "development",
+			"version":     "1.0.0",
+		}),
+	)
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
 
-	// Log a message (no actual output due to /dev/null)
-	logger.Info("Hello, world!")
+	// Now all log entries will include the service name and initial fields
+	log.Info("Service started")
 
-	// For the example, we display what would normally be logged
-	fmt.Println("Logged 'Hello, world!' at INFO level")
-	// Output: Logged 'Hello, world!' at INFO level
+	// No Output: Log output is not captured in examples
 }
 
-// ExampleInfow demonstrates structured logging with key-value pairs
-func ExampleInfow() {
-	// Initialize a simple logger with no output
-	_ = logger.Init(logger.Config{
-		Level:       "info",
-		Development: true,
-		OutputPaths: []string{"/dev/null"},
+func ExampleLogger_WithFields() {
+	// Create a base logger
+	log, err := logger.New()
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
+
+	// Create a child logger with additional fields
+	requestLogger := log.WithFields(map[string]interface{}{
+		"request_id": "abc-123",
+		"user_id":    "user-456",
+		"path":       "/api/items",
 	})
 
-	// Log structured data (no actual output due to /dev/null)
-	logger.Infow("User logged in",
-		"user_id", 123,
-		"username", "john.doe",
-		"login_count", 5,
+	// Log with the request context
+	requestLogger.Info("Processing request")
+	requestLogger.Error("Request failed")
+
+	// No Output: Log output is not captured in examples
+}
+
+func ExampleLogger_With() {
+	// Create a base logger
+	log, err := logger.New()
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
+
+	// Create a child logger with additional structured fields
+	requestLogger := log.With(
+		zap.String("request_id", "abc-123"),
+		zap.String("user_id", "user-456"),
+		zap.String("path", "/api/items"),
 	)
 
-	// For the example, we display what would normally be logged
-	fmt.Println("Logged structured data about user login at INFO level")
-	// Output: Logged structured data about user login at INFO level
+	// Log with the request context
+	requestLogger.Info("Processing request")
+
+	// No Output: Log output is not captured in examples
 }
 
-// ExampleWithContext demonstrates using loggers with context
-func ExampleWithContext() {
-	// Initialize logger with no output
-	_ = logger.Init(logger.Config{
-		Level:       "info",
-		Development: true,
-		OutputPaths: []string{"/dev/null"},
-	})
+func ExampleLogger_Infow() {
+	// Create a logger
+	log, err := logger.New()
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
 
-	// Create a context with logger
-	ctx := context.Background()
-
-	// Add fields to logger and store in context
-	l := logger.With(
-		zap.String("request_id", "req-123"),
-		zap.String("client_ip", "192.168.1.1"),
+	// Log with structured key-value pairs (equivalent to zapcore.Field)
+	log.Infow("User logged in",
+		"user_id", "user-123",
+		"login_method", "oauth",
+		"client_ip", "192.168.1.1",
 	)
-	ctx = logger.ContextWithLogger(ctx, l)
+
+	// No Output: Log output is not captured in examples
+}
+
+func ExampleLogger_Debugf() {
+	// Create a logger with debug level
+	log, err := logger.New(logger.WithLevel("debug"))
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
+
+	// Log with formatting (like fmt.Printf)
+	userId := "user-123"
+	log.Debugf("Processing request for user %s", userId)
+
+	// No Output: Log output is not captured in examples
+}
+
+func ExampleNewContext() {
+	// Create a logger
+	log, err := logger.New(
+		logger.WithServiceName("api-service"),
+	)
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
+
+	// Create a request-specific logger
+	requestLog := log.With(
+		zap.String("request_id", "req-abc123"),
+		zap.String("path", "/api/users"),
+	)
+
+	// Store the logger in the context
+	baseCtx := context.Background()
+	ctx := logger.NewContext(baseCtx, requestLog)
 
 	// Later, retrieve the logger from context
-	contextLogger := logger.WithContext(ctx)
+	ProcessRequest(ctx)
 
-	// Use the logger (no actual output due to /dev/null)
-	contextLogger.Info("Processing request")
-
-	fmt.Println("Logged with context-aware logger containing request_id and client_ip")
-	// Output: Logged with context-aware logger containing request_id and client_ip
+	// No Output: Log output is not captured in examples
 }
 
-// ExampleWithFields demonstrates adding structured fields to logs
-func ExampleWithFields() {
-	// Initialize logger with no output
-	_ = logger.Init(logger.Config{
-		Level:       "info",
-		Development: true,
-		OutputPaths: []string{"/dev/null"},
-	})
+// Helper function to demonstrate WithContext
+func ProcessRequest(ctx context.Context) {
+	// Get the logger from context
+	log := logger.WithContext(ctx)
 
-	// Create a logger with additional fields
-	appLogger := logger.WithFields(map[string]interface{}{
-		"component": "auth",
-		"module":    "login",
-	})
-
-	// Use the logger (no actual output due to /dev/null)
-	appLogger.Info("Authentication successful")
-
-	fmt.Println("Logged with component and module fields")
-	// Output: Logged with component and module fields
+	// Log with the context-specific logger
+	log.Info("Processing request")
 }
 
-// Example_logLevels demonstrates different log levels
-func Example_logLevels() {
-	// Initialize logger with info level and no output
-	_ = logger.Init(logger.Config{
-		Level:       "info", // Debug messages won't be logged
-		Development: true,
-		OutputPaths: []string{"/dev/null"},
-	})
+func ExampleWithContext() {
+	// Create a context with no logger
+	ctx := context.Background()
 
-	// These logs would be written but aren't captured in example output
-	logger.Debug("This is a debug message") // Not logged due to level setting
-	logger.Info("This is an info message")
-	logger.Warn("This is a warning message")
-	logger.Error("This is an error message")
+	// Try to get a logger from the context
+	// This will return a default logger since none exists in the context
+	log := logger.WithContext(ctx)
 
-	// Simulate the log level filtering behavior for the example
-	fmt.Println("Debug message: not logged (below threshold)")
-	fmt.Println("Info message: logged")
-	fmt.Println("Warning message: logged")
-	fmt.Println("Error message: logged")
-	// Output:
-	// Debug message: not logged (below threshold)
-	// Info message: logged
-	// Warning message: logged
-	// Error message: logged
+	// Use the logger
+	log.Info("Using default logger from context")
+
+	// No Output: Log output is not captured in examples
+}
+
+func ExampleNewNopLogger() {
+	// Create a no-op logger for testing
+	log := logger.NewNopLogger()
+
+	// These logs will be silently discarded
+	log.Info("This will not be logged")
+	log.Error("This error will also be discarded",
+		zap.String("reason", "using no-op logger"),
+	)
+
+	// No Output: Log output is not captured in examples
+}
+
+func ExampleLogger_Debug() {
+	// Create a logger with debug level
+	log, err := logger.New(logger.WithLevel("debug"))
+	if err != nil {
+		fmt.Printf("Error creating logger: %v\n", err)
+		return
+	}
+
+	// Log with structured fields
+	log.Debug("Database connection established",
+		zap.String("host", "localhost"),
+		zap.Int("port", 5432),
+		zap.Duration("connect_time", 50*time.Millisecond),
+	)
+
+	// No Output: Log output is not captured in examples
 }

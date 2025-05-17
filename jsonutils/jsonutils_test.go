@@ -192,3 +192,44 @@ func TestDecodeWithReaderError(t *testing.T) {
 		t.Fatal("Expected error for reader error, got nil")
 	}
 }
+
+func TestDecodeWithNilValue(t *testing.T) {
+	jsonStr := `{"name":"John","age":30,"email":"john@example.com"}`
+	reader := strings.NewReader(jsonStr)
+	
+	err := Decode(reader, nil)
+	
+	if err == nil {
+		t.Fatal("Expected error for nil destination, got nil")
+	}
+}
+
+func TestPrettyWithComplexTypes(t *testing.T) {
+	// Test with nested structures
+	data := map[string]interface{}{
+		"person": TestStruct{
+			Name:  "John",
+			Age:   30,
+			Email: "john@example.com",
+		},
+		"tags":    []string{"tag1", "tag2", "tag3"},
+		"numbers": []int{1, 2, 3, 4, 5},
+		"nested": map[string]interface{}{
+			"key1": "value1",
+			"key2": 42,
+			"key3": true,
+		},
+	}
+	
+	pretty, err := Pretty(data)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	
+	// Just check if it contains expected keys
+	for _, key := range []string{"person", "tags", "numbers", "nested"} {
+		if !strings.Contains(pretty, key) {
+			t.Errorf("Expected pretty output to contain key '%s', but it doesn't", key)
+		}
+	}
+}

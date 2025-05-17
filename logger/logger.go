@@ -1,8 +1,6 @@
 package logger
 
 import (
-	"context"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -31,19 +29,20 @@ type Config struct {
 	ServiceName string
 	// InitialFields are fields added to all log entries
 	InitialFields map[string]interface{}
+	// DisableCaller disables including the caller in log output
+	DisableCaller bool
+	// DisableStacktrace disables including stack traces in log output
+	DisableStacktrace bool
 }
 
-var (
-	// global logger instance
-	globalLogger *zap.Logger
-	// global sugared logger (easier to use)
-	globalSugared *zap.SugaredLogger
-)
+// Logger represents a logger instance
+type Logger struct {
+	logger  *zap.Logger
+	sugared *zap.SugaredLogger
+}
 
-type ctxLoggerKey struct{}
-
-// Init initializes the global logger based on the provided config
-func Init(cfg Config) error {
+// buildZapLogger builds a zap logger from the configuration
+func buildZapLogger(cfg Config) (*zap.Logger, error) {
 	// Set default output path if none provided
 	if len(cfg.OutputPaths) == 0 {
 		cfg.OutputPaths = []string{"stdout"}
@@ -53,7 +52,7 @@ func Init(cfg Config) error {
 	level := zap.InfoLevel
 	if cfg.Level != "" {
 		if err := level.Set(cfg.Level); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -65,8 +64,8 @@ func Init(cfg Config) error {
 		EncoderConfig:     zap.NewProductionEncoderConfig(),
 		OutputPaths:       cfg.OutputPaths,
 		ErrorOutputPaths:  []string{"stderr"},
-		DisableCaller:     false,
-		DisableStacktrace: false,
+		DisableCaller:     cfg.DisableCaller,
+		DisableStacktrace: cfg.DisableStacktrace,
 	}
 
 	// Use more human-friendly settings for development
@@ -82,7 +81,7 @@ func Init(cfg Config) error {
 	// Build the logger
 	logger, err := zapConfig.Build(zap.AddCallerSkip(1))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Add default fields
@@ -99,136 +98,220 @@ func Init(cfg Config) error {
 		logger = logger.With(fields...)
 	}
 
-	// Set the global logger instances
-	globalLogger = logger
-	globalSugared = logger.Sugar()
-
-	return nil
+	return logger, nil
 }
 
-// GetLogger returns the global logger
-func GetLogger() *zap.Logger {
-	if globalLogger == nil {
-		// Create a default logger if not initialized
-		globalLogger, _ = zap.NewProduction()
-		globalSugared = globalLogger.Sugar()
+// Option is a function that configures the logger
+type Option func(*Config)
+
+// WithLevel sets the minimum log level
+func WithLevel(level string) Option {
+	return func(cfg *Config) {
+		cfg.Level = level
 	}
-	return globalLogger
 }
 
-// GetSugared returns the global sugared logger
-func GetSugared() *zap.SugaredLogger {
-	if globalSugared == nil {
-		// Create a default logger if not initialized
-		globalLogger, _ = zap.NewProduction()
-		globalSugared = globalLogger.Sugar()
+// WithDevelopmentMode enables or disables development mode
+func WithDevelopmentMode(enabled bool) Option {
+	return func(cfg *Config) {
+		cfg.Development = enabled
 	}
-	return globalSugared
 }
 
-// WithContext returns a logger from the context or the default logger
-func WithContext(ctx context.Context) *zap.Logger {
-	if l, ok := ctx.Value(ctxLoggerKey{}).(*zap.Logger); ok {
-		return l
+// WithOutputPaths sets the output paths for the logger
+func WithOutputPaths(paths []string) Option {
+	return func(cfg *Config) {
+		cfg.OutputPaths = paths
 	}
-	return GetLogger()
 }
 
-// ContextWithLogger adds a logger to the context
-func ContextWithLogger(ctx context.Context, logger *zap.Logger) context.Context {
-	return context.WithValue(ctx, ctxLoggerKey{}, logger)
+// WithServiceName sets the service name for the logger
+func WithServiceName(name string) Option {
+	return func(cfg *Config) {
+		cfg.ServiceName = name
+	}
+}
+
+// WithInitialFields sets initial fields for the logger
+func WithInitialFields(fields map[string]interface{}) Option {
+	return func(cfg *Config) {
+		if cfg.InitialFields == nil {
+			cfg.InitialFields = make(map[string]interface{})
+		}
+		for k, v := range fields {
+			cfg.InitialFields[k] = v
+		}
+	}
+}
+
+// WithDisableCaller disables including the caller in log output
+func WithDisableCaller(disable bool) Option {
+	return func(cfg *Config) {
+		cfg.DisableCaller = disable
+	}
+}
+
+// WithDisableStacktrace disables including stack traces in log output
+func WithDisableStacktrace(disable bool) Option {
+	return func(cfg *Config) {
+		cfg.DisableStacktrace = disable
+	}
+}
+
+// NewLogger creates a new logger from the configuration
+func NewLogger(cfg Config) (*Logger, error) {
+	zapLogger, err := buildZapLogger(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Logger{
+		logger:  zapLogger,
+		sugared: zapLogger.Sugar(),
+	}, nil
+}
+
+// New creates a new logger with functional options
+func New(options ...Option) (*Logger, error) {
+	// Default configuration
+	cfg := Config{
+		Level:       "info",
+		Development: false,
+		OutputPaths: []string{"stdout"},
+	}
+
+	// Apply all options
+	for _, option := range options {
+		option(&cfg)
+	}
+
+	return NewLogger(cfg)
 }
 
 // With creates a child logger with additional fields
-func With(fields ...zapcore.Field) *zap.Logger {
-	return GetLogger().With(fields...)
+func (l *Logger) With(fields ...zapcore.Field) *Logger {
+	// Create a new logger with the fields
+	newLogger := l.logger.With(fields...)
+
+	// Convert zapcore.Fields to interfaces for the sugared logger
+	args := make([]interface{}, len(fields))
+	for i, field := range fields {
+		args[i] = field
+	}
+
+	return &Logger{
+		logger:  newLogger,
+		sugared: newLogger.Sugar().With(args...),
+	}
 }
 
-// WithFields creates a child sugared logger with additional fields
-func WithFields(fields map[string]interface{}) *zap.SugaredLogger {
+// WithFields creates a child logger with additional fields as key-value pairs
+func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
 	args := make([]interface{}, 0, len(fields)*2)
 	for k, v := range fields {
 		args = append(args, k, v)
 	}
-	return GetSugared().With(args...)
+
+	return &Logger{
+		logger:  l.logger,
+		sugared: l.sugared.With(args...),
+	}
 }
 
 // Debug logs at debug level
-func Debug(msg string, fields ...zapcore.Field) {
-	GetLogger().Debug(msg, fields...)
+func (l *Logger) Debug(msg string, fields ...zapcore.Field) {
+	l.logger.Debug(msg, fields...)
 }
 
 // Info logs at info level
-func Info(msg string, fields ...zapcore.Field) {
-	GetLogger().Info(msg, fields...)
+func (l *Logger) Info(msg string, fields ...zapcore.Field) {
+	l.logger.Info(msg, fields...)
 }
 
 // Warn logs at warn level
-func Warn(msg string, fields ...zapcore.Field) {
-	GetLogger().Warn(msg, fields...)
+func (l *Logger) Warn(msg string, fields ...zapcore.Field) {
+	l.logger.Warn(msg, fields...)
 }
 
 // Error logs at error level
-func Error(msg string, fields ...zapcore.Field) {
-	GetLogger().Error(msg, fields...)
+func (l *Logger) Error(msg string, fields ...zapcore.Field) {
+	l.logger.Error(msg, fields...)
 }
 
 // Fatal logs at fatal level and then calls os.Exit(1)
-func Fatal(msg string, fields ...zapcore.Field) {
-	GetLogger().Fatal(msg, fields...)
+func (l *Logger) Fatal(msg string, fields ...zapcore.Field) {
+	l.logger.Fatal(msg, fields...)
 }
 
 // Debugf logs at debug level with formatting (sugared logger)
-func Debugf(template string, args ...interface{}) {
-	GetSugared().Debugf(template, args...)
+func (l *Logger) Debugf(template string, args ...interface{}) {
+	l.sugared.Debugf(template, args...)
 }
 
 // Debugw logs at debug level with structured key-value pairs (sugared logger)
-func Debugw(msg string, keysAndValues ...interface{}) {
-	GetSugared().Debugw(msg, keysAndValues...)
+func (l *Logger) Debugw(msg string, keysAndValues ...interface{}) {
+	l.sugared.Debugw(msg, keysAndValues...)
 }
 
 // Infof logs at info level with formatting (sugared logger)
-func Infof(template string, args ...interface{}) {
-	GetSugared().Infof(template, args...)
+func (l *Logger) Infof(template string, args ...interface{}) {
+	l.sugared.Infof(template, args...)
 }
 
 // Infow logs at info level with structured key-value pairs (sugared logger)
-func Infow(msg string, keysAndValues ...interface{}) {
-	GetSugared().Infow(msg, keysAndValues...)
+func (l *Logger) Infow(msg string, keysAndValues ...interface{}) {
+	l.sugared.Infow(msg, keysAndValues...)
 }
 
 // Warnf logs at warn level with formatting (sugared logger)
-func Warnf(template string, args ...interface{}) {
-	GetSugared().Warnf(template, args...)
+func (l *Logger) Warnf(template string, args ...interface{}) {
+	l.sugared.Warnf(template, args...)
 }
 
 // Warnw logs at warn level with structured key-value pairs (sugared logger)
-func Warnw(msg string, keysAndValues ...interface{}) {
-	GetSugared().Warnw(msg, keysAndValues...)
+func (l *Logger) Warnw(msg string, keysAndValues ...interface{}) {
+	l.sugared.Warnw(msg, keysAndValues...)
 }
 
 // Errorf logs at error level with formatting (sugared logger)
-func Errorf(template string, args ...interface{}) {
-	GetSugared().Errorf(template, args...)
+func (l *Logger) Errorf(template string, args ...interface{}) {
+	l.sugared.Errorf(template, args...)
 }
 
 // Errorw logs at error level with structured key-value pairs (sugared logger)
-func Errorw(msg string, keysAndValues ...interface{}) {
-	GetSugared().Errorw(msg, keysAndValues...)
+func (l *Logger) Errorw(msg string, keysAndValues ...interface{}) {
+	l.sugared.Errorw(msg, keysAndValues...)
 }
 
 // Fatalf logs at fatal level with formatting and then calls os.Exit(1)
-func Fatalf(template string, args ...interface{}) {
-	GetSugared().Fatalf(template, args...)
+func (l *Logger) Fatalf(template string, args ...interface{}) {
+	l.sugared.Fatalf(template, args...)
 }
 
 // Fatalw logs at fatal level with structured key-value pairs (sugared logger) and then calls os.Exit(1)
-func Fatalw(msg string, keysAndValues ...interface{}) {
-	GetSugared().Fatalw(msg, keysAndValues...)
+func (l *Logger) Fatalw(msg string, keysAndValues ...interface{}) {
+	l.sugared.Fatalw(msg, keysAndValues...)
 }
 
 // Sync flushes any buffered log entries
-func Sync() error {
-	return GetLogger().Sync()
+func (l *Logger) Sync() error {
+	return l.logger.Sync()
+}
+
+// NewNopLogger returns a no-op logger for testing where logs are undesired
+func NewNopLogger() *Logger {
+	// Create a no-op zap logger
+	noopCore := zapcore.NewNopCore()
+	noopZap := zap.New(noopCore)
+	
+	return &Logger{
+		logger:  noopZap,
+		sugared: noopZap.Sugar(),
+	}
+}
+
+// NoOp returns a no-op logger for testing where logs are undesired
+// This is an alias for NewNopLogger for backward compatibility
+func NoOp() *Logger {
+	return NewNopLogger()
 }
