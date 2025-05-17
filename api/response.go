@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	
+
 	"github.com/StairSupplies/go-core/logger"
 	"go.uber.org/zap"
 )
@@ -73,8 +73,8 @@ func UnprocessableEntityError(err error) Error {
 // SuccessResponse is a standard structure for successful API responses.
 // It provides a consistent response format with status code, data, and optional metadata.
 type SuccessResponse struct {
-	StatusCode int         `json:"status_code"` // HTTP status code
-	Data       interface{} `json:"data"`        // Response payload
+	StatusCode int         `json:"status_code"`    // HTTP status code
+	Data       interface{} `json:"data"`           // Response payload
 	Meta       interface{} `json:"meta,omitempty"` // Optional metadata (pagination, counts, etc.)
 }
 
@@ -150,9 +150,9 @@ func WrapHandler(h HandlerFunc) http.HandlerFunc {
 		if err := h(w, r); err != nil {
 			// Get logger from context or use default
 			log := logger.WithContext(r.Context())
-			
+
 			// Log the error
-			log.Error("HTTP API Error", 
+			log.Error("HTTP API Error",
 				zap.String("path", r.URL.Path),
 				zap.String("err", err.Error()),
 			)
