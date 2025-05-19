@@ -1,3 +1,13 @@
+# [1.4.0](https://github.com/StairSupplies/go-core/compare/v1.3.0...v1.4.0) (2025-05-19)
+
+
+### Features
+
+* **config:** add environment management utilities ([7a67eff](https://github.com/StairSupplies/go-core/commit/7a67eff10f15c8d79e88604ab82e1c001a00b719))
+* **logger:** add context-aware logging ([6640076](https://github.com/StairSupplies/go-core/commit/66400762daac514336e61c548e8021c8e8a56120))
+* **rest:** add client configuration options ([5287290](https://github.com/StairSupplies/go-core/commit/52872902be479daba384549d03ca9f096bc4919e))
+* **rest:** add standardized error handling ([3119015](https://github.com/StairSupplies/go-core/commit/31190156f5d42f037387307bb68b7002ad057806))
+
 # [1.3.0](https://github.com/StairSupplies/go-core/compare/v1.2.0...v1.3.0) (2025-05-13)
 
 
