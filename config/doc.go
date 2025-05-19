@@ -1,49 +1,71 @@
 /*
-Package config provides utilities for loading application configuration from environment variables.
+Package config provides utilities for loading application configuration from environment variables and .env files.
 
-The package uses Viper and godotenv to create a flexible configuration system that supports
-environment variables and .env files.
+# Overview
 
-# Basic Usage
-
-Define a struct with fields tagged using mapstructure:
-
-	type AppConfig struct {
-		Port        string `mapstructure:"PORT"`
-		DatabaseURL string `mapstructure:"DATABASE_URL"`
-		Debug       bool   `mapstructure:"DEBUG"`
-	}
-
-Then load configuration:
-
-	// Load from .env file and environment variables
-	cfg, err := config.New[AppConfig](".env")
-	
-	// Or simply from environment variables
-	cfg, err := config.New[AppConfig]("")
+The config package simplifies the process of loading and managing configuration settings
+in Go applications. It uses environment variables as the primary source of configuration,
+with optional support for loading from .env files.
 
 # Features
 
-- Type-safe configuration with Go generics
-- Automatic binding of struct fields to environment variables
-- Support for .env file loading
-- Compatible with various data types including strings, integers, booleans, etc.
-- Error handling for improperly formatted environment values
+  - Type-safe configuration using generics
+  - Automatic binding of environment variables to struct fields
+  - Support for loading from .env files using godotenv
+  - Environment constants for standard deployment environments
 
-# Advanced Use Cases
+# Usage
 
-If you have nested configuration:
-
-	type DatabaseConfig struct {
-		URL      string `mapstructure:"DATABASE_URL"`
-		MaxConns int    `mapstructure:"DATABASE_MAX_CONNECTIONS"`
-	}
+Define a configuration struct with mapstructure tags to specify which environment variables
+to bind to each field:
 
 	type AppConfig struct {
-		Port     string         `mapstructure:"PORT"`
-		Database DatabaseConfig
+		AppName  string `mapstructure:"APP_NAME"`
+		Port     int    `mapstructure:"APP_PORT"`
+		LogLevel string `mapstructure:"LOG_LEVEL"`
+		Debug    bool   `mapstructure:"APP_DEBUG"`
 	}
 
-Viper will attempt to map nested fields using dot notation.
+Then load the configuration:
+
+	// Load from environment variables only
+	cfg, err := config.New[AppConfig]("")
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Or load from .env file with fallback to environment variables
+	cfg, err := config.New[AppConfig](".env")
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+# Environment Management
+
+The package provides constants for standard deployment environments:
+
+	- config.EnvDevelopment - Local development environment
+	- config.EnvStaging - Staging/test environment
+	- config.EnvProduction - Production environment
+
+Helper functions for environment management:
+
+	// Check if an environment is valid
+	isValid := config.IsValidEnvironment(env)
+
+	// Get the default environment (development)
+	defaultEnv := config.GetDefaultEnvironment()
+
+# Priority Order
+
+When loading configuration, environment variables take precedence over values defined
+in .env files. This allows for easy overriding of configuration values in different
+deployment environments.
+
+# Dependencies
+
+This package uses:
+  - github.com/joho/godotenv for loading .env files
+  - github.com/spf13/viper for binding environment variables to struct fields
 */
 package config
