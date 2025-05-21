@@ -62,7 +62,7 @@ The package provides standardized error handling:
 	err := client.Get(ctx, "/users/123", &user)
 	if err != nil {
 		switch {
-		case errors.Is(err, rest.ErrNotFound):
+		case errors.Is(err, rest.ErrResourceNotFound):
 			fmt.Println("User not found")
 		case errors.Is(err, rest.ErrUnauthorized):
 			fmt.Println("Authentication required")

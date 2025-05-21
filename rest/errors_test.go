@@ -11,7 +11,7 @@ func TestClientError_Error(t *testing.T) {
 	// Test with message
 	t.Run("with message", func(t *testing.T) {
 		err := &ClientError{
-			Err:     ErrNotFound,
+			Err:     ErrResourceNotFound,
 			Message: "resource not found",
 		}
 
@@ -39,7 +39,7 @@ func TestClientError_Error(t *testing.T) {
 }
 
 func TestClientError_Unwrap(t *testing.T) {
-	underlying := ErrNotFound
+	underlying := ErrResourceNotFound
 	err := &ClientError{
 		Err:     underlying,
 		Message: "test message",
@@ -52,7 +52,7 @@ func TestClientError_Unwrap(t *testing.T) {
 	}
 
 	// Test with errors.Is
-	if !errors.Is(err, ErrNotFound) {
+	if !errors.Is(err, ErrResourceNotFound) {
 		t.Errorf("errors.Is() failed to find the underlying error")
 	}
 }
@@ -79,7 +79,7 @@ func TestGetErrorByStatusCode(t *testing.T) {
 		expected   error
 	}{
 		{http.StatusUnauthorized, ErrUnauthorized},
-		{http.StatusNotFound, ErrNotFound},
+		{http.StatusNotFound, ErrResourceNotFound},
 		{http.StatusUnprocessableEntity, ErrUnprocessableEntity},
 		{http.StatusBadRequest, ErrInvalidRequest},
 		{http.StatusConflict, ErrInvalidRequest},
@@ -115,7 +115,7 @@ func TestSentinelErrors(t *testing.T) {
 	}{
 		{ErrInvalidRequest, "invalid request"},
 		{ErrUnauthorized, "unauthorized"},
-		{ErrNotFound, "resource not found"},
+		{ErrResourceNotFound, "resource not found"},
 		{ErrServerError, "server error"},
 		{ErrConnectionFailed, "connection failed"},
 		{ErrTimeout, "request timed out"},
