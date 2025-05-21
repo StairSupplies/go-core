@@ -200,8 +200,8 @@ func TestClientRequest(t *testing.T) {
 		}
 
 		// Check error details
-		if clientErr.Err != ErrNotFound {
-			t.Errorf("Expected ErrNotFound, got %v", clientErr.Err)
+		if clientErr.Err != ErrResourceNotFound {
+			t.Errorf("Expected ErrResourceNotFound, got %v", clientErr.Err)
 		}
 
 		if clientErr.Message != "Resource not found" {

@@ -277,7 +277,7 @@ func ExampleWithServiceName() {
 func ExampleNewClientError() {
 	// Create a custom client error
 	err := rest.NewClientError(
-		rest.ErrNotFound,
+		rest.ErrResourceNotFound,
 		"User with ID 123 not found",
 		"USER_NOT_FOUND",
 	)

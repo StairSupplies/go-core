@@ -14,8 +14,8 @@ var (
 	// ErrUnauthorized indicates that the request was rejected due to authentication failure.
 	ErrUnauthorized = errors.New("unauthorized")
 
-	// ErrNotFound indicates that the requested resource could not be found.
-	ErrNotFound = errors.New("resource not found")
+	// ErrResourceNotFound indicates that the requested resource could not be found.
+	ErrResourceNotFound = errors.New("resource not found")
 
 	// ErrServerError indicates that the server encountered an error processing the request.
 	ErrServerError = errors.New("server error")
@@ -28,6 +28,9 @@ var (
 
 	// ErrUnprocessableEntity indicates that the server understood the request but was unable to process it.
 	ErrUnprocessableEntity = errors.New("unprocessable entity")
+
+	// ErrInvalidResponse indicates that the response from the server was invalid or malformed.
+	ErrInvalidResponse = errors.New("invalid response")
 )
 
 // ClientError represents an error from the client.
@@ -65,7 +68,7 @@ func getErrorByStatusCode(statusCode int) error {
 	case statusCode == http.StatusUnauthorized:
 		return ErrUnauthorized
 	case statusCode == http.StatusNotFound:
-		return ErrNotFound
+		return ErrResourceNotFound
 	case statusCode == http.StatusUnprocessableEntity:
 		return ErrUnprocessableEntity
 	case statusCode >= 400 && statusCode < 500:
